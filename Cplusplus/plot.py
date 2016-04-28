@@ -16,6 +16,9 @@ for line in open("chart1.txt"):
 		x.append(float(listWords[0]) - start)
 		y.append(float(listWords[1]))
 	else:
+		plt.xlabel('Time')
+		plt.ylabel('Function Value')
+		plt.title(fileName[index])
 		plt.plot(x, y, '-o')
 		plt.savefig('chart1_'+fileName[index]+'.jpg')
 		plt.close()
@@ -27,6 +30,9 @@ for line in open("chart1.txt"):
 		x.append(float(listWords[0]) - start)
 		y.append(float(listWords[1]))
 
+plt.xlabel('Time')
+plt.ylabel('Function Value')
+plt.title(fileName[index])
 plt.plot(x, y, '-o')
 plt.savefig('chart1_'+fileName[index]+'.jpg')
 plt.close()
@@ -45,6 +51,9 @@ for line in open("chart2.txt"):
 		x.append(float(listWords[0]) - start)
 		y.append(float(listWords[1]))
 	else:
+		plt.xlabel('Time')
+		plt.ylabel('|g|_inf')
+		plt.title(fileName[index])
 		plt.plot(x, y, '-o')
 		plt.savefig('chart2_'+fileName[index]+'.jpg')
 		plt.close()
@@ -56,6 +65,9 @@ for line in open("chart2.txt"):
 		x.append(float(listWords[0]) - start)
 		y.append(float(listWords[1]))
 
+plt.xlabel('Time')
+plt.ylabel('|g|_inf')
+plt.title(fileName[index])
 plt.plot(x, y, '-o')
 plt.savefig('chart2_'+fileName[index]+'.jpg')
 plt.close()
