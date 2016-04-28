@@ -1,6 +1,6 @@
 #Trust Region Newton Method using C++
 
-The results in the following tables are obtained on some of the datasets (using [logisticRegression_table.cpp](Cplusplus/logisticRegression_table.cpp)):
+The results in the following tables are obtained on some of the datasets (using [logisticRegression_table.cpp](logisticRegression_table.cpp)):
 
 Time is in seconds.
 
@@ -40,24 +40,24 @@ For rcv1_test.binary:
 | 4             | 97.710803     |   76  |
 | 16            | 97.691612     |   113 |
 
-Following charts are obtained on the same datasets (using [logisticRegression_chart1.cpp](Cplusplus/logisticRegression_chart1.cpp)). The charts show function value versus time(in seconds).
+Following charts are obtained on the same datasets (using [logisticRegression_chart1.cpp](logisticRegression_chart1.cpp)). The charts show function value versus time(in seconds).
 
-![a9a](Cplusplus/chart1_a9a.jpg)
+![a9a](chart1_a9a.jpg)
 
-![real-sim.svml](Cplusplus/chart1_real-sim.svml.jpg)
+![real-sim.svml](chart1_real-sim.svml.jpg)
 
-![news20.binary](Cplusplus/chart1_news20.binary.jpg)
+![news20.binary](chart1_news20.binary.jpg)
 
-![rcv1_test.binary](Cplusplus/chart1_rcv1_test.binary.jpg)
+![rcv1_test.binary](chart1_rcv1_test.binary.jpg)
 
-Following charts are obtained on the same datasets (using [logisticRegression_chart2.cpp](Cplusplus/logisticRegression_chart2.cpp)). The charts show infinite norm of function gradient value versus time(in seconds).
+Following charts are obtained on the same datasets (using [logisticRegression_chart2.cpp](logisticRegression_chart2.cpp)). The charts show infinite norm of function gradient value versus time(in seconds).
 
-![a9a](Cplusplus/chart2_a9a.jpg)
+![a9a](chart2_a9a.jpg)
 
-![real-sim.svml](Cplusplus/chart2_real-sim.svml.jpg)
+![real-sim.svml](chart2_real-sim.svml.jpg)
 
-![news20.binary](Cplusplus/chart2_news20.binary.jpg)
+![news20.binary](chart2_news20.binary.jpg)
 
-![rcv1_test.binary](Cplusplus/chart2_rcv1_test.binary.jpg)
+![rcv1_test.binary](chart2_rcv1_test.binary.jpg)
 
-All the charts were plotted using [plot.py](Cplusplus/plot.py)
+All the charts were plotted using [plot.py](plot.py)
