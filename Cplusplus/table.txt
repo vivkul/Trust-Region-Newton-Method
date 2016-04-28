@@ -1,0 +1,16 @@
+For file a9a at C = 0.250000, accu = 84.730199 and time = 3.000000
+For file a9a at C = 1.000000, accu = 84.665704 and time = 2.000000
+For file a9a at C = 4.000000, accu = 84.671847 and time = 5.000000
+For file a9a at C = 16.000000, accu = 84.653420 and time = 8.000000
+For file real-sim.svml at C = 0.250000, accu = 95.846990 and time = 3.000000
+For file real-sim.svml at C = 1.000000, accu = 96.997607 and time = 7.000000
+For file real-sim.svml at C = 4.000000, accu = 97.424940 and time = 10.000000
+For file real-sim.svml at C = 16.000000, accu = 97.516215 and time = 15.000000
+For file news20.binary at C = 0.250000, accu = 89.652931 and time = 17.000000
+For file news20.binary at C = 1.000000, accu = 93.403681 and time = 26.000000
+For file news20.binary at C = 4.000000, accu = 95.624125 and time = 41.000000
+For file news20.binary at C = 16.000000, accu = 96.249250 and time = 58.000000
+For file rcv1_test.binary at C = 0.250000, accu = 97.179949 and time = 31.000000
+For file rcv1_test.binary at C = 1.000000, accu = 97.548712 and time = 49.000000
+For file rcv1_test.binary at C = 4.000000, accu = 97.710803 and time = 76.000000
+For file rcv1_test.binary at C = 16.000000, accu = 97.691612 and time = 113.000000

@@ -1,5 +1,9 @@
 a.out
 a9a
+news20.binary
+rcv1_test.binary
+real-sim.svml
 b9b
 loader.cpp
 logisticRegression
+shuffle.cpp

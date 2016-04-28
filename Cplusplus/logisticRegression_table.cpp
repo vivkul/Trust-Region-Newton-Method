@@ -3,6 +3,12 @@
 #include <math.h>
 #include <ctype.h>
 #include <string.h>
+#include <algorithm>
+#include <vector>
+#include <ctime>
+#include <cstdlib>
+
+using namespace std;
 
 typedef long int lint;
 
@@ -151,10 +157,10 @@ void vec_scale(double *d, double beta, lint n){	//Updates d = beta*d
 	}
 }
 
-void cgp(int k, double delta, double *g, double *D, double C, double *x_val, lint *x_colind, lint *x_rowptr, lint l, lint n, double *y, double *s, double *r){	//Conjugate Gradient procedure for approximately solving the trust region sub-problem, finds s and r
+void cgp(double delta, double *g, double *D, double C, double *x_val, lint *x_colind, lint *x_rowptr, lint l, lint n, double *y, double *s, double *r){	//Conjugate Gradient procedure for approximately solving the trust region sub-problem, finds s and r
 	double zai = 0.1;	//Page 635
 	double tol = zai * norm2(g, n);
-	double *d = (double *)malloc((l)*sizeof(double));
+	double *d = (double *)malloc((n)*sizeof(double));
 	double *Hd = (double *)malloc((n)*sizeof(double));	//Stores Hessian * d
 	double rTr, alpha, one = 1, rnewTrnew, beta;
 	lint i;
@@ -240,7 +246,7 @@ void tra(double *w, double *x_val, lint *x_colind, lint *x_rowptr, lint l, lint 
 				break;
 			}
 			// printf("norm g is %lf\n", norm_inf(n, g));	// debug
-			cgp(k, delta, g, D, C, x_val, x_colind, x_rowptr, l, n, y, s, r);
+			cgp(delta, g, D, C, x_val, x_colind, x_rowptr, l, n, y, s, r);
 			memcpy(w_new, w, sizeof(double) * n);
 			vec_add(w_new, one, s, n);
 
@@ -281,7 +287,7 @@ void tra(double *w, double *x_val, lint *x_colind, lint *x_rowptr, lint l, lint 
 				grad_f_D(l, n, w, x_val, x_colind, x_rowptr, y, C, z, g, D);
 			}
 			// printf("%lf\n", delta); // debug
-			printf("%lf\n", f);	// debug
+			// printf("%lf\n", f);	// debug
 		}
 	}
 	free(z);
@@ -323,14 +329,16 @@ out:
 		++(*l);
 	}
 eof:
+	++(*n);									//Augmenting for bias term
+	*num_elements = *num_elements + *l;		//Augmenting for bias term
 	fclose(fp);
 }
 
-void read_data(double *x_val, lint *x_colind, lint *x_rowptr, double *y, lint l, const char *fileName){
+void read_data(double *x_val, lint *x_colind, lint *x_rowptr, double *y, lint l, lint n, const char *fileName){
 	FILE *fp = fopen(fileName,"r");
 	int index;
 	double value;
-	lint i, j = 0, newLine = 0;
+	lint i, j = 0;
 	for(i = 0; i < l; ++i){
 		x_rowptr[i] = j;
 		fscanf(fp,"%lf",&y[i]);
@@ -349,37 +357,178 @@ void read_data(double *x_val, lint *x_colind, lint *x_rowptr, double *y, lint l,
 			++j;
 		}
 out:
-		++newLine;
+		x_val[j] = 1;		//Augmenting for bias
+		x_colind[j] = n-1;
+		++j;
 	}
 	x_rowptr[i] = j;
 	fclose(fp);
 }
 
-void CV(double *C, const char *fileName[2]){
-	lint l, n, num_elements;
-	
-	data_parameters(&l, &n, &num_elements, fileName[0]);
+double accuracy(double *w, double *x_val, lint *x_colind, lint *x_rowptr, lint l, lint n, double *y){
+	double one = 1, accu = 0;
+	double *z = (double *)calloc(l, sizeof(double));
+	Xw(w, x_val, x_colind, x_rowptr, l, z);
+	lint i;
+	for(i = 0; i < l; ++i){
+		if(z[i] > 0){
+			if(one/(1 + exp(-z[i])) > 0.5 && y[i] == 1){
+				++accu;
+			}
+		}
+		else{
+			if(one/(1 + exp(z[i])) > 0.5 && y[i] == -1){
+				++accu;
+			}
+		}
+	}
+	return 100*accu/l;
+}
 
-	double *x_val = (double *)malloc((num_elements)*sizeof(double));
-	lint *x_colind = (lint *)malloc((num_elements)*sizeof(lint));
-	lint *x_rowptr = (lint *)malloc((l+1)*sizeof(lint));
-	double *y = (double *)malloc((l)*sizeof(double));
-	double *w = (double *)malloc((n)*sizeof(double));
+void CV(double *C, const char *fileName[4]){
+	lint l, n, num_elements, num_test_elements;
+	lint num_train_elements, l_test, l_train, train_stop;
+	lint train_row_yet, test_row_yet, num_train_yet, num_test_yet;
+	int cv_folds = 5, num_files = 4;
+	int i, j, cv_iter, k;
+	double *accu = (double *)malloc((4)*sizeof(double));
+	double *time_stat = (double *)malloc((4)*sizeof(double));
+	double accur;
+	srand ( unsigned ( time(0) ) );	//Assigning a random seed
 
-	read_data(x_val, x_colind, x_rowptr, y, l, fileName[0]);
-	tra(w, x_val, x_colind, x_rowptr, l, n, y, C[2]);
+	for(i = 0; i < num_files; ++i){
+		if(i > 2){
+			cv_folds = 2;
+		}
+		data_parameters(&l, &n, &num_elements, fileName[i]);
 
-	free(x_val);
-	free(x_colind);
-	free(x_rowptr);
-	free(y);
-	free(w);
+		double *w = (double *)malloc((n)*sizeof(double));
+		double *y = (double *)malloc((l)*sizeof(double));
+		double *x_val = (double *)malloc((num_elements)*sizeof(double));
+		lint *x_colind = (lint *)malloc((num_elements)*sizeof(lint));
+		lint *x_rowptr = (lint *)malloc((l+1)*sizeof(lint));
 
+		read_data(x_val, x_colind, x_rowptr, y, l, n, fileName[i]);
+
+		vector<int> randomized;
+		for(j = 0; j < l; ++j){
+			randomized.push_back(j);
+		}
+		random_shuffle ( randomized.begin(), randomized.end() );
+		for(j = 0; j < cv_folds; ++j){
+			sort (randomized.begin() + j*l/cv_folds, randomized.begin() + (j+1)*l/cv_folds);
+		}
+
+		for(j = 0; j < 4; ++j){
+			accu[j] = 0;
+			time_stat[j] = 0;
+		}
+
+		vector<int>::iterator it;
+
+		for(cv_iter = 0; cv_iter < cv_folds; ++cv_iter){
+			num_test_elements = 0;
+			
+			for (it = randomized.begin() + cv_iter*l/cv_folds; it < randomized.begin() + (cv_iter+1)*l/cv_folds; ++it){
+    			num_test_elements += (x_rowptr[(*it)+1] - x_rowptr[*it]);
+			}
+			
+			l_test = (cv_iter+1)*l/cv_folds - cv_iter*l/cv_folds;
+    		double *y_test = (double *)malloc((l_test)*sizeof(double));
+			double *x_val_test = (double *)malloc((num_test_elements)*sizeof(double));
+			lint *x_colind_test = (lint *)malloc((num_test_elements)*sizeof(lint));
+			lint *x_rowptr_test = (lint *)malloc((l_test + 1)*sizeof(lint));
+			
+			l_train = l - l_test;
+			num_train_elements = num_elements - num_test_elements;
+    		double *y_train = (double *)malloc((l_train)*sizeof(double));
+			double *x_val_train = (double *)malloc((num_train_elements)*sizeof(double));
+			lint *x_colind_train = (lint *)malloc((num_train_elements)*sizeof(lint));
+			lint *x_rowptr_train = (lint *)malloc((l_train + 1)*sizeof(lint));
+			
+			train_row_yet = 0;
+			test_row_yet = 0;
+			num_train_yet = 0;
+			num_test_yet = 0;
+			
+			for(j = 0; j < *(randomized.begin() + cv_iter*l/cv_folds); ++j){
+				x_rowptr_train[train_row_yet] = num_train_yet;
+				y_train[train_row_yet] = y[j];
+				for(k = x_rowptr[j]; k < x_rowptr[j+1]; ++k){
+					x_val_train[num_train_yet] = x_val[k];
+					x_colind_train[num_train_yet] = x_colind[k];
+					++num_train_yet;
+				}
+				++train_row_yet;
+			}
+			
+			for (it = randomized.begin() + cv_iter*l/cv_folds; it < randomized.begin() + (cv_iter+1)*l/cv_folds; ++it){
+				x_rowptr_test[test_row_yet] = num_test_yet;
+				y_test[test_row_yet] = y[*it];
+				for(k = x_rowptr[*it]; k < x_rowptr[(*it)+1]; ++k){
+					x_val_test[num_test_yet] = x_val[k];
+					x_colind_test[num_test_yet] = x_colind[k];
+					++num_test_yet;
+				}
+				++test_row_yet;
+				if(it == (randomized.begin() + (cv_iter+1)*l/cv_folds - 1)){
+					train_stop = l;
+				}
+				else{
+					train_stop = *(it + 1);
+				}
+				for(j = (*it)+1; j < train_stop; ++j){
+					x_rowptr_train[train_row_yet] = num_train_yet;
+					y_train[train_row_yet] = y[j];
+					for(k = x_rowptr[j]; k < x_rowptr[j+1]; ++k){
+						x_val_train[num_train_yet] = x_val[k];
+						x_colind_train[num_train_yet] = x_colind[k];
+						++num_train_yet;
+					}
+					++train_row_yet;
+				}
+			}
+			
+			x_rowptr_test[test_row_yet] = num_test_yet;
+			x_rowptr_train[train_row_yet] = num_train_yet;
+
+			for(j = 0; j < 4; ++j){
+				
+				time_stat[j] = time_stat[j] - time(0);
+				tra(w, x_val_train, x_colind_train, x_rowptr_train, l_train, n, y_train, C[j]);
+				time_stat[j] = time_stat[j] + time(0);
+				
+				accur = accuracy(w, x_val_test, x_colind_test, x_rowptr_test, l_test, n, y_test);
+				// printf("For file %s at C = %lf and CV = %d, accu = %lf\n", fileName[i], C[j], cv_iter, accur);
+				accu[j] += accur * l_test;
+			}
+
+			free(y_test);
+			free(x_val_test);
+			free(x_colind_test);
+			free(x_rowptr_test);
+			free(y_train);
+			free(x_val_train);
+			free(x_colind_train);
+			free(x_rowptr_train);
+		}
+		for(j = 0; j < 4; ++j){
+			accu[j] = accu[j]/l;
+			printf("For file %s at C = %lf, accu = %lf and time = %lf\n", fileName[i], C[j], accu[j], time_stat[j]);
+		}
+		free(x_val);
+		free(x_colind);
+		free(x_rowptr);
+		free(y);
+		free(w);
+	}
+	free(accu);
+	free(time_stat);
 }
 
 int main(){
 	double C[4] = {0.25, 1, 4, 16};
-	const char *fileName[2] = {"a9a","b9b"};
+	const char *fileName[4] = {"a9a","real-sim.svml","news20.binary","rcv1_test.binary"};
 
 	CV(C, fileName);
 
