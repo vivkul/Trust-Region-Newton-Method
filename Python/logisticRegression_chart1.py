@@ -3,7 +3,6 @@ import numpy as np
 import random
 from sklearn.datasets import load_svmlight_file
 from scipy.sparse import csr_matrix
-from scipy.sparse import coo_matrix, hstack
 import math
 import time
 
@@ -169,12 +168,11 @@ def CV(C, fileName):	#For dividing dataset for crossvalidation
 	for fl in fileName:
 		if fl == 'rcv1_test.binary':
 			cv_folds = 2
-		X_csr,y = load_svmlight_file(fl)
-		l = X_csr.shape[0]
-		X_coo = X_csr.tocoo()
-		one_csr = csr_matrix(np.ones(l))
-		one_coo = one_csr.T.tocoo()
-		X = hstack([X_coo,one_coo]).tocsr()	#Augmenting for bias
+		X_,y = load_svmlight_file(fl)
+		l = X_.shape[0]
+		S = X_.toarray()
+		P = np.append(S.T,[np.ones(l)],0).T 	#Augmenting for bias
+		X = csr_matrix(P)
 		n = X.shape[1]
 		randomized = np.arange(l)
 		np.random.shuffle(randomized)
@@ -183,37 +181,28 @@ def CV(C, fileName):	#For dividing dataset for crossvalidation
 			accu[j] = 0
 			time_stat[j] = 0
 
-		for cv_iter in range(cv_folds):
-			X_test = X[randomized[(cv_iter*l/cv_folds):((cv_iter+1)*l/cv_folds)]]
-			y_test = y[randomized[(cv_iter*l/cv_folds):((cv_iter+1)*l/cv_folds)]]
-			l_test = (cv_iter+1)*l/cv_folds - cv_iter*l/cv_folds
-			X_train = X[list(randomized[0:(cv_iter*l/cv_folds)])+list(randomized[((cv_iter+1)*l/cv_folds):l])]
-			y_train = y[list(randomized[0:(cv_iter*l/cv_folds)])+list(randomized[((cv_iter+1)*l/cv_folds):l])]
-			l_train = l - l_test
+		cv_iter = 0
+		X_test = X[randomized[(cv_iter*l/cv_folds):((cv_iter+1)*l/cv_folds)]]
+		y_test = y[randomized[(cv_iter*l/cv_folds):((cv_iter+1)*l/cv_folds)]]
+		l_test = (cv_iter+1)*l/cv_folds - cv_iter*l/cv_folds
+		X_train = X[list(randomized[0:(cv_iter*l/cv_folds)])+list(randomized[((cv_iter+1)*l/cv_folds):l])]
+		y_train = y[list(randomized[0:(cv_iter*l/cv_folds)])+list(randomized[((cv_iter+1)*l/cv_folds):l])]
+		l_train = l - l_test
 
-			for j in range(len(C)):
-				time_stat[j] = time_stat[j] - time.time()
-				w = tra(X_train, y_train, l_train, n, C[j])
-				time_stat[j] = time_stat[j] + time.time()
-
-				accur = accuracy(w, X_test, l_test, n, y_test)
-				accu[j] += accur * l_test
-
-			del X_test
-			del y_test
-			del X_train
-			del y_train
-			
 		for j in range(len(C)):
-			accu[j] = (accu[j]*1.0)/l;
-			print "For file %s at C = %lf, accu = %lf and time = %lf" %(fl, C[j], accu[j], time_stat[j])
-		
+			w,time_chart = tra(X_train, y_train, l_train, n, C[j])
+
+		#Print time_chart
+
+		del X_test
+		del y_test
+		del X_train
+		del y_train		
+		del X_
 		del X
 		del y
-		del X_csr
-		del X_coo
-		del one_csr
-		del one_coo
+		del S
+		del P
 		del randomized
 
 
