@@ -99,10 +99,11 @@ def tra(X, y, l, n, C):	#Returns w learnt on training dataset
 	w = np.zeros(n)
 	z = X*w
 	f = obj_fun(w, X, y, C, z, l)
-	time_chart[math.floor(time.time() - time_now)] = f
 	g,D = grad_f_D(l, w, X, y, C, z)
 
-	if np.linalg.norm(g, np.inf) < eps:
+	inf_norm = np.linalg.norm(g, np.inf)
+	time_chart[math.floor(time.time() - time_now)] = inf_norm
+	if inf_norm < eps:
 		flag = 0
 
 	delta = np.linalg.norm(g,2)	#Page 635
@@ -111,7 +112,9 @@ def tra(X, y, l, n, C):	#Returns w learnt on training dataset
 	k = 0
 	if flag == 1:
 		while k < max_iter:
-			if np.linalg.norm(g, np.inf) < eps:
+			inf_norm = np.linalg.norm(g, np.inf)
+			time_chart[math.floor(time.time() - time_now)] = inf_norm
+			if inf_norm < eps:
 				break
 
 			s,r = cgp(delta, g, D, C, X, n)
@@ -146,7 +149,6 @@ def tra(X, y, l, n, C):	#Returns w learnt on training dataset
 				k += 1
 				w = np.copy(w_new)
 				f = fnew
-				time_chart[math.floor(time.time() - time_now)] = f
 				g,D = grad_f_D(l, w, X, y, C, z)
 			del w_new
 	del g
